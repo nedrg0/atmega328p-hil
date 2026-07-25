@@ -3,18 +3,18 @@
 //#define __AVR_ATmega328__
 #include <avr/io.h>
 
-#include "led.h"
+#include "gpio.h"
 
 int main()
 {
-    led_init();
+    io_set_direction(IO_LED, IO_OUTPUT);
     while(1)
     {
-        led_toggle();
-        _delay_ms(1000);
+        io_set_out(IO_LED, 1);
+        _delay_ms(200);
 
-        led_toggle();
-        _delay_ms(1000);
+        io_set_out(IO_LED, 0);
+        _delay_ms(200);
     }
     return 0;
 }

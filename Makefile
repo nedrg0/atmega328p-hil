@@ -25,10 +25,10 @@ BIN_DIR = $(BUILD_DIR)/bin
 #Files
 TARGET = $(BIN_DIR)/blink
 
-SOURCES = main.c led.c
+SOURCES = main.c gpio.c
 
 OBJECT_NAMES = $(SOURCE:.c=.o)
-OBJECTS = $(OBJ_DIR)/main.o $(OBJ_DIR)/led.o
+OBJECTS = $(OBJ_DIR)/main.o $(OBJ_DIR)/gpio.o
 CPPCHECK_SOURCES = $(wildcard $(SRC_DIR)/*.c $(APP_DIR)/*.c $(DRIVERS_DIR)/*.c $(COMMON_DIR)/*.c)
 
 
