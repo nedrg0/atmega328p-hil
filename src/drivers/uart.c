@@ -28,7 +28,8 @@ void uart_init(void)
 
     //Frame configuration
     UCSR0C = (0 << USBS0) | (3 << UCSZ00); // 8 data bits
-
+    UCSR0A |= (1 << U2X0);   // enable double-speed mode
+    
     uart_enable_interrupt();
 
 }
@@ -64,5 +65,13 @@ void uart_putchar(char c)
 void uart_putstring(const char* s)
 {
     while(*s) uart_putchar(*s++);
+}
+
+void uart_putint(const int32_t u)
+{
+    uart_putchar((char)( u        & 0xFF));  // byte 0 (LSB)
+    uart_putchar((char)((u >> 8)  & 0xFF));  // byte 1
+    uart_putchar((char)((u >> 16) & 0xFF));  // byte 2
+    uart_putchar((char)((u >> 24) & 0xFF));  // byte 3 (MSB)
 }
 

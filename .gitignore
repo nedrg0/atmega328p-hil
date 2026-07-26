@@ -53,5 +53,9 @@ dkms.conf
 
 # debug information files
 *.dwo
+
 #VSCODE files
 .vscode
+
+#Igonre python files for now
+/tools/python

@@ -7,8 +7,8 @@
 
 #include <defines.h>
 
-#define BAUD_RATE 9600 
-#define BAUD (((F_CPU/ (BAUD_RATE * 16UL))) - 1)
+#define BAUD_RATE 115200
+#define BAUD (((F_CPU/ (BAUD_RATE * 8UL))) - 1)
 
 /*
 * Init the USART registers and interrupt 
@@ -23,6 +23,7 @@ void uart_transmit(void);
 */
 void uart_putchar(char c);
 void uart_putstring(const char* s);
+void uart_putint(const int32_t u);
 
 
 
