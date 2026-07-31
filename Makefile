@@ -11,6 +11,9 @@ SRC_DIR = ./src
 APP_DIR = $(SRC_DIR)/app
 COMMON_DIR = $(SRC_DIR)/common
 DRIVERS_DIR = $(SRC_DIR)/drivers
+TOOLS_DIR = ./tools
+HIL_DIR = $(TOOLS_DIR)/hil_sim
+HIL_INCLUDES_DIR = $(HIL_DIR)/include
 
 AVR_ROOT_DIR = /usr/lib/avr
 AVR_INCLUDE_DIR = $(AVR_ROOT_DIR)/include
@@ -25,14 +28,15 @@ BIN_DIR = $(BUILD_DIR)/bin
 #Files
 TARGET = $(BIN_DIR)/blink
 
-SOURCES = main.c gpio.c uart.c ring_buffer.c timer.c 
+SOURCES = main.c gpio.c uart.c ring_buffer.c timer.c protocol.c 
 
 OBJECT_NAMES = $(SOURCE:.c=.o)
 OBJECTS = 	$(OBJ_DIR)/main.o \
 				   	$(OBJ_DIR)/gpio.o \
 					$(OBJ_DIR)/uart.o \
 					$(OBJ_DIR)/ring_buffer.o \
-					$(OBJ_DIR)/timer.o
+					$(OBJ_DIR)/timer.o \
+					$(OBJ_DIR)/protocol.o
 CPPCHECK_SOURCES = $(wildcard $(SRC_DIR)/*.c $(APP_DIR)/*.c $(DRIVERS_DIR)/*.c $(COMMON_DIR)/*.c)
 
 
@@ -81,7 +85,7 @@ $(OBJ_DIR)/%.o : $(COMMON_DIR)/%.c
 	@mkdir -p $(dir $@)
 	$(CC) $(CFLAGS) -c -o $@ $^ 
 
-.PHONY: all clean flash cppcheck
+.PHONY: all clean flash cppcheck hiltest
 
 all: $(TARGET).hex
 
@@ -93,3 +97,7 @@ flash: $(TARGET).hex
 
 cppcheck: 
 	@$(CPPCHECK) $(CPPCHECK_FLAGS)
+
+hiltest:
+	gcc -O2  -o $(HIL_DIR)/main $(HIL_DIR)/main.c
+	$(HIL_DIR)/main
