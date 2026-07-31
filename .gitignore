@@ -58,4 +58,4 @@ dkms.conf
 .vscode
 
 #Igonre python files for now
-/tools/python
+/tools
