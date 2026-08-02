@@ -3,7 +3,7 @@
 #include <ring_buffer.h>
 #include <avr/interrupt.h>
 
-#define UART_TX_BUFFER_SIZE (16)
+#define UART_TX_BUFFER_SIZE (32)
 #define UART_RX_BUFFER_SIZE (64)
 /*
 * Define RX and TX ring buffers.
@@ -37,7 +37,7 @@ void uart_init(void)
 
     //Frame configuration
     UCSR0C = (0 << USBS0) | (3 << UCSZ00); // 8 data bits
-    //UCSR0A |= (1 << U2X0);   // enable double-speed mode
+    UCSR0A |= (1 << U2X0);   // enable double-speed mode
     
     uart_enable_tx_interrupt();
     uart_enable_rx_interrupt();

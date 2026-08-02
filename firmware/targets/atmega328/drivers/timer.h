@@ -7,7 +7,7 @@
 #endif 
 
 #define TIMER1_PRESCALER   64UL
-#define TICK_FREQ_HZ       100UL   // Hz 
+#define TICK_FREQ_HZ       50UL   // Hz 
 
 #define OCR1A_VALUE  (F_CPU / (TIMER1_PRESCALER * TICK_FREQ_HZ) - 1)
 

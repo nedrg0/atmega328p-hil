@@ -7,8 +7,8 @@
 
 #include <stdbool.h>
 
-#define BAUD_RATE 9600 
-#define BAUD (((F_CPU/ (BAUD_RATE * 16UL))) - 1)
+#define BAUD_RATE 115200
+#define BAUD (((F_CPU/ (BAUD_RATE * 8UL))) - 1)
 
 /*
 * Init the USART registers and interrupt 

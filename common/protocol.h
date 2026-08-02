@@ -5,15 +5,16 @@
 #include <stdbool.h>
  
  
-#define FRAME_START_SENSOR 0xA5   /* HIL -> AVR */
-#define FRAME_START_MOTOR   0x5A   /* AVR -> HIL */
+#define FRAME_START_SENSOR (0xA5)   /* HIL -> AVR */
+#define FRAME_START_MOTOR   (0x5A)   /* AVR -> HIL */
 /*
 *   Defines the State struct of the system 
 *   For the quadcopter model would be 13 * 4 (Float size) = 52 Bytes + 2 Bytes start frame = 54 Bytes
 *   
 */ 
 typedef struct __attribute__((packed)) {
-    float pos[2];
+    float accel[3];
+    float gyro[3];
 } State_t;    
 /*
 *   Defines the motor command struct sent 

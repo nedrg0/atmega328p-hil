@@ -7,37 +7,26 @@ PORT = /dev/ttyUSB0
 
 #Directories 
 
-SRC_DIR = ./src
-APP_DIR = $(SRC_DIR)/app
-COMMON_DIR = $(SRC_DIR)/common
-DRIVERS_DIR = $(SRC_DIR)/drivers
-TOOLS_DIR = ./tools
-HIL_DIR = $(TOOLS_DIR)/hil_sim
-HIL_INCLUDES_DIR = $(HIL_DIR)/include
+COMMON_DIR = ../../common
+DRIVERS_DIR = drivers
 
 AVR_ROOT_DIR = /usr/lib/avr
 AVR_INCLUDE_DIR = $(AVR_ROOT_DIR)/include
 AVR_BIN_DIR = $(AVR_ROOT_DIR)/bin
-INCLUDE_DIRS = $(AVR_INCLUDE_DIR) $(APP_DIR) $(COMMON_DIR) $(DRIVERS_DIR) $(SRC_DIR)
+INCLUDE_DIRS = $(AVR_INCLUDE_DIR) $(COMMON_DIR) $(DRIVERS_DIR) 
 LIB_DIRS = $(AVR_INCLUDE_DIR)
 
-BUILD_DIR = build
-OBJ_DIR = $(BUILD_DIR)/obj
-BIN_DIR = $(BUILD_DIR)/bin
+OBJ_DIR = obj
+
 
 #Files
-TARGET = $(BIN_DIR)/blink
+TARGET = app
 
 SOURCES = main.c gpio.c uart.c ring_buffer.c timer.c protocol.c 
 
-OBJECT_NAMES = $(SOURCE:.c=.o)
-OBJECTS = 	$(OBJ_DIR)/main.o \
-				   	$(OBJ_DIR)/gpio.o \
-					$(OBJ_DIR)/uart.o \
-					$(OBJ_DIR)/ring_buffer.o \
-					$(OBJ_DIR)/timer.o \
-					$(OBJ_DIR)/protocol.o
-CPPCHECK_SOURCES = $(wildcard $(SRC_DIR)/*.c $(APP_DIR)/*.c $(DRIVERS_DIR)/*.c $(COMMON_DIR)/*.c)
+OBJECTS = $(addprefix $(OBJ_DIR)/, $(SOURCES:.c=.o))
+
+CPPCHECK_SOURCES = $(wildcard $(DRIVERS_DIR)/*.c $(COMMON_DIR)/*.c)
 
 
 # Toolchain
@@ -69,11 +58,8 @@ $(TARGET).elf : $(OBJECTS)
 	$(CC)  $(LFLAGS) $^ -o $@ 
 
 ## Compile
-$(OBJ_DIR)/%.o : $(SRC_DIR)/%.c
-	@mkdir -p $(dir $@)
-	$(CC) $(CFLAGS) -c -o $@ $^ 
-
-$(OBJ_DIR)/%.o : $(APP_DIR)/%.c
+$(OBJ_DIR)/%.o : %.c
+	$(info OBJECTS =  $(OBJECTS))
 	@mkdir -p $(dir $@)
 	$(CC) $(CFLAGS) -c -o $@ $^ 
 
@@ -90,7 +76,9 @@ $(OBJ_DIR)/%.o : $(COMMON_DIR)/%.c
 all: $(TARGET).hex
 
 clean:
-	@rm -r $(BUILD_DIR)
+	@rm -r $(OBJ_DIR)
+	@rm -r $(TARGET).elf
+	@rm -r $(TARGET).hex
 
 flash: $(TARGET).hex
 	$(AVRDUDE) -c arduino -p $(MCU) -P $(PORT) -b $(BAUD) -U flash:w:$^ 
