@@ -1,5 +1,6 @@
 #include <gpio.h>
 #include <avr/io.h>
+#include <timer.h>
 
 
 void io_set_direction(io_e io, io_dir_e dir)
@@ -42,4 +43,11 @@ void io_set_out(io_e io, uint8_t value)
         case IO_LED:
             PORTB = (PORTB & ~(1 << 5)) | (value << 5);
     }
+}
+void io_pwm_init(void)
+{
+    // Set pins PD6, PB3:1 to output
+    DDRD |= (1 << DDD6) | (1 << DDD3) | (1 << DDD5); 
+    DDRB |= (1 << DDB3); 
+
 }

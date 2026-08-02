@@ -20,9 +20,16 @@ int main()
 {
     // Init. routines
     sei();
-    uart_init();
-    timer1_init();
+    //uart_init();
+    //timer1_init();
+    io_pwm_init();
+    timer0_init();
+    timer2_init();
 
+    timer0_set_duty_cycle_A(100);
+    timer0_set_duty_cycle_B(50);
+    timer2_set_duty_cycle_A(25);
+    timer2_set_duty_cycle_B(0);
     State_t state;
     MotorCommand_t m_cmd = {0};
     m_cmd.motor_cmd[0] = 0;
@@ -35,16 +42,7 @@ int main()
         {
             if(protocol_poll_state(&state))
             {
-                float z = state.accel[2];
-                uint16_t cmd_norm = 0;
-                if(z <= 9.0) 
-                {
-                    cmd_norm = 6000;
-                } 
-                else if (z > 11.0)
-                {
-                    cmd_norm = 2240;
-                }
+                uint16_t cmd_norm = 100;
                 
                 m_cmd.motor_cmd[0] = cmd_norm;
                 m_cmd.motor_cmd[1] = cmd_norm;

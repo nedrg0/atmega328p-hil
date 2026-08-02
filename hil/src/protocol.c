@@ -1,24 +1,9 @@
-#ifndef PROTOCOL_H
-#define PROTOCOL_H
- 
+#include "protocol.h"
+
+#include <string.h>
 #include <stdint.h>
 #include <stdbool.h>
- 
-/* Use float (not double) -- avr-gcc's double is 4 bytes, same as float,
- * but don't rely on that matching x86's 8-byte double. float is explicit
- * and identical in size on both ends. */
- 
-#define FRAME_START_SENSOR 0xA5   /* HIL -> AVR */
-#define FRAME_START_MOTOR   0x5A   /* AVR -> HIL */
- 
-typedef struct __attribute__((packed)) {
-    float accel[3];
-    float gyro[3];
-} State_t;   /* 13 * 4 = 52 bytes payload */
- 
-typedef struct __attribute__((packed)) {
-    uint16_t motor_cmd[4];
-} MotorCommand_t; /* 8 bytes payload */
+#include <unistd.h>
 
 void protocol_send_sensor_packet(int fd, const State_t* pkt)
 {
@@ -95,5 +80,5 @@ bool protocol_poll_motor_cmd(int fd, MotorCommand_t *out)
     }
     return false;
 }
-#endif // PROTOCOL_H
+
  

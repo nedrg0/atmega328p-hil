@@ -12,7 +12,7 @@
 #define CT_FODE4_STEP_IMPLEMENTATION
 #include "ode_solver.h"
 
-#define LOOP_HZ 1000
+#define LOOP_HZ 10000
 #define STEP_NS (1000000000L / LOOP_HZ)
 #define TIMESTEP ((1.0 / LOOP_HZ)) 
 
@@ -30,19 +30,60 @@
 #define kF (double)(6.11 * 1e-8)
 #define kM (double)(1.5 * 1e-9)
 
+#define b (1 * 1e-6)
+#define J (double)(5 * 1e-6)
+#define K (0.03)
+#define Rm (1.5)
+#define Lm (0.5 * 1e-3)
+
+
+#define c1 (double)(-b / J)
+#define c2 (double)(K / J)
+#define c3 (double)(- K / Lm)
+#define c4 (double)(- Rm / Lm)
+#define c5 (double)( 1.0 / Lm )
+#define RAD_TO_RPM (60 / (2.0 * 3.14 ))
+
+#define STATE_SIZE (13 + 4 * 2)
+
 typedef struct 
 {
-    float x[13];
+    float x[STATE_SIZE];
 }State_raw_t;
 
 void ode_func(float tn, float* x, float* dx, float* u, uint8_t xdim)
 {
+
+    /*
+     * TODO: 
+     * Maybe skip the inductance dynamis since they don't really play a big role in the overall system dynamics, but require smaller timesteps. 
+     */
+
+    // Motor 1
+    dx[13] = c1 * x[13] + c2 * x[14];
+    dx[14] = c3 * x[13] + c4 * x[14] + c5 * 12 * u[0] / 100;
+    // Motor 2
+    dx[15] = c1 * x[15] + c2 * x[16];
+    dx[16] = c3 * x[15] + c4 * x[16] + c5 * 12 * u[1] / 100;
+    // Motor 3
+    dx[17] = c1 * x[17] + c2 * x[18];
+    dx[18] = c3 * x[17] + c4 * x[18] + c5 * 12 * u[2] / 100;
+    // Motor 4
+    dx[19] = c1 * x[19] + c2 * x[20];
+    dx[20] = c3 * x[19] + c4 * x[20] + c5 * 12 * u[3] / 100;
+
+    double F1, F2, F3, F4;
+    F1 = (float) (kF * x[13] * x[13] * RAD_TO_RPM);
+    F2 = (float) (kF * x[15] * x[15] * RAD_TO_RPM);
+    F3 = (float) (kF * x[17] * x[17] * RAD_TO_RPM);
+    F4 = (float) (kF * x[19] * x[19] * RAD_TO_RPM);
+
     //Torque vectors
     float T, Tx, Ty, Tz;
-    T = (float) (kF * (u[0]*u[0] + u[1]*u[1] + u[2]*u[2] + u[3]*u[3] ));
-    Tx = (float) (kF * (u[1]*u[1] - u[2]*u[2]));
-    Ty = (float) (kF * (u[0]*u[0] - u[3]*u[3]));
-    Tz = (float) (kM * (u[0]*u[0]-u[1]*u[1] + u[2]*u[2] - u[3] *u[3]));
+    T = F1 + F2 + F3 + F4;
+    Tx = L * (F2 - F4);
+    Ty = L * (F1 - F3);
+    Tz = gamma * (F1 - F2 + F3 - F4);
 
     //Position x,y,z
     dx[0] = x[3];
@@ -68,13 +109,14 @@ void ode_func(float tn, float* x, float* dx, float* u, uint8_t xdim)
 
 static void solve_step(State_t* state, State_raw_t* state_raw, MotorCommand_t* m_cmd)
 {
-    float x_[13];
-    float dx[13];
+    float x_[STATE_SIZE];
+    float dx[STATE_SIZE];
     float u[4];
 
     uint8_t xdim = sizeof(x_)/sizeof(x_[0]);
     for(int i = 0 ; i < xdim; i++) x_[i] = state_raw->x[i];
 
+    // Motor Commands: Duty cycle passed to the PWM outputs on the MCU.
     u[0] = m_cmd->motor_cmd[0];
     u[1] = m_cmd->motor_cmd[1];
     u[2] = m_cmd->motor_cmd[2];
@@ -82,7 +124,8 @@ static void solve_step(State_t* state, State_raw_t* state_raw, MotorCommand_t* m
 
     ct_fode4_step(ode_func, 0.0, dx, x_, xdim, u, TIMESTEP);
 
-
+    if (x_[2] <= 0.0) x_[2] = 0.0;
+    if (x_[2] <= 0.0 && x_[5] <= 0.0) x_[5] = 0.0; 
     for(int i = 0 ; i < xdim; i++) state_raw->x[i] = x_[i];
 
     state->accel[0] = dx[3]; 
@@ -164,11 +207,11 @@ int main()
         bool recv_m_cmd = protocol_poll_motor_cmd(uart, &motor_cmd);
         if(tick_count % 50 == 0) 
         {
-
-            printf("ax=%f | ay=%f | az=%f \n", state.accel[0], state.accel[1], state.accel[2]);
-            printf("wx=%f | wy=%f | wz=%f \n", state.gyro[0], state.gyro[1], state.gyro[2]);
-            printf("x = %f | y = %f | z = %f\n", state_raw.x[0], state_raw.x[1], state_raw.x[2]);
-            printf("motor: %d | %d | %d | %d\n", motor_cmd.motor_cmd[0],motor_cmd.motor_cmd[1],motor_cmd.motor_cmd[2],motor_cmd.motor_cmd[3]);
+            //printf("w1 = %f |w2 = %f |w3 = %f |w4 = %f |\n", state_raw.x[13], state_raw.x[15], state_raw.x[17], state_raw.x[19]);
+            //printf("ax=%f | ay=%f | az=%f \n", state.accel[0], state.accel[1], state.accel[2]);
+            //printf("wx=%f | wy=%f | wz=%f \n", state.gyro[0], state.gyro[1], state.gyro[2]);
+            //printf("x = %f | y = %f | z = %f\n", state_raw.x[0], state_raw.x[1], state_raw.x[2]);
+            //printf("motor: %d | %d | %d | %d\n", motor_cmd.motor_cmd[0],motor_cmd.motor_cmd[1],motor_cmd.motor_cmd[2],motor_cmd.motor_cmd[3]);
 
         }
             tick_count++;
@@ -177,7 +220,7 @@ int main()
             clock_gettime(CLOCK_MONOTONIC, &now);
             double elapsed = (now.tv_sec - start_time.tv_sec)
                             + (now.tv_nsec - start_time.tv_nsec) / 1e9;
-            printf("1000 iterations in %.4f s (target: 1.0000 s)\n", elapsed);
+            printf("1000 iterations in %.4f s (target: %f s)\n", elapsed, (1000.0/ (double)LOOP_HZ));
             start_time = now;  /* reset window so each print covers the next 1000 */
         }  
         add_ns(&deadline, STEP_NS);
