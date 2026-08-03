@@ -9,10 +9,12 @@
 #include "timer.h"
 #include "protocol.h"
 volatile bool sample = 0;
-
+volatile uint32_t ticks = 0;
+volatile uint8_t cmd = 90;
 ISR(TIMER1_COMPA_vect)
 {
     sample = true;
+    if(ticks++ == 2000) cmd = 74;
 }
 
 
@@ -20,8 +22,8 @@ int main()
 {
     // Init. routines
     sei();
-    //uart_init();
-    //timer1_init();
+    uart_init();
+    timer1_init();
     io_pwm_init();
     timer0_init();
     timer2_init();
@@ -42,7 +44,7 @@ int main()
         {
             if(protocol_poll_state(&state))
             {
-                uint16_t cmd_norm = 100;
+                uint16_t cmd_norm = cmd;
                 
                 m_cmd.motor_cmd[0] = cmd_norm;
                 m_cmd.motor_cmd[1] = cmd_norm;

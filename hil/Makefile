@@ -4,10 +4,12 @@
 
 # Includes
 PROTOCOL_DIR = ../common
-INCLUDE_DIRS = $(PROTOCOL_DIR)
 SOURCES_DIR = src
 
-SOURCES = main.c $(SOURCES_DIR)/protocol.c
+INCLUDE_DIRS = $(PROTOCOL_DIR) $(SOURCES_DIR)
+
+SOURCES = main.c $(SOURCES_DIR)/protocol.c $(SOURCES_DIR)/serial.c  $(SOURCES_DIR)/solver.c
+					
 
 # Toolchain
 GCC = gcc
