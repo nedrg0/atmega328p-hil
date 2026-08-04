@@ -6,16 +6,12 @@ exchanging sensor and motor-command data over UART with a physics-based
 quadrotor simulation running on a host PC.
 
 
-## Why this exists
-
-Testing flight-controller firmware for a quadcopter.
-
 ## Features
 
-- **12-state nonlinear quadrotor dynamics** — 6-DOF rigid body (position,
+- **13-state nonlinear quadrotor dynamics** — 6-DOF rigid body (position,
   velocity, quaternion attitude, angular velocity), integrated with RK4.
 - **Per-motor electrical + mechanical dynamics** First order approximation
-  of a DC motor.
+  of a BLDC motor.
 - **Aerodynamic drag** (Not yet implemented...) (linear translational + rotational damping) so
   the vehicle reaches terminal velocity instead of accelerating forever.
 - **Custom binary UART protocol** — length-prefixed, checksummed frames,
@@ -53,8 +49,8 @@ hil/
   main.c                 # host-side physics loop + simulation entry point
   src/
     protocol.c           # host-side frame parser/sender
-    serial.c /.h         # Serial interface
-    solver.c / h         # generic fixed-step ODE integrators (Euler/RK4)
+    serial.c /.h         # Serial interface / UDP config for Python Viz (Not yet commited).
+    solver.c / h         # fixed-step ODE integrators (Euler/RK4) with Quadcopter model
 ```
 
 ## Building
