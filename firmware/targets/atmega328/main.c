@@ -15,6 +15,7 @@ volatile uint16_t cmd = 0;
 ISR(TIMER1_COMPA_vect)
 {
     sample = true;
+    ticks++;
 }
 
 
@@ -47,7 +48,7 @@ int main()
             if(protocol_poll_state(&state))
             {
                 cmd = adc_read();
-                uint16_t scaled_cmd = adc_to_dshot_throttle_inverted(cmd);
+                uint16_t scaled_cmd = ticks >= 3000 ? 1539 : 1560;//adc_to_dshot_throttle_inverted(cmd);
                 
                 m_cmd.motor_cmd[0] =scaled_cmd;
                 m_cmd.motor_cmd[1] =scaled_cmd;

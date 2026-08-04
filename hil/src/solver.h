@@ -44,8 +44,7 @@ typedef struct
     float x[STATE_SIZE];
 }State_raw_t;
 
-void ct_fode1_step(void (*ode_func) (float,  float*, float*, float* , uint8_t), float tn, float* dx, float* x, uint8_t xdim, float* u, float Ts);
-void ct_fode4_step(void (*ode_func) (float,  float*, float*, float*, uint8_t), float tn, float* dx, float* x, uint8_t xdim, float* u, float Ts);
+void ct_fode4_step(void (*ode_func) (double,  double*, double*, double*, uint8_t), double tn, double* dx, double* x, uint8_t xdim, double* u, double Ts);
 
 void solve_step(State_t* state, State_raw_t* state_raw, MotorCommand_t* m_cmd);
 

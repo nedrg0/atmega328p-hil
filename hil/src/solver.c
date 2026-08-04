@@ -4,26 +4,26 @@
 #include "solver.h"
 #include <math.h>
 
-void ct_fode4_step(void (*ode_func) (float,  float*, float*, float* , uint8_t), float tn, float* dx, float* x, uint8_t xdim, float* u, float Ts)
+void ct_fode4_step(void (*ode_func) (double,  double*, double*, double* , uint8_t), double tn, double* dx, double* x, uint8_t xdim, double* u, double Ts)
 {
-    float k1[xdim];
+    double k1[xdim];
     (*ode_func) (tn, x, k1, u, xdim);  // Compute full step
 
-    float temp[xdim];
+    double temp[xdim];
 
     for (int i =0; i < xdim; i++) temp[i] = x[i] + Ts/2 * k1[i]; 
 
-    float k2[xdim];
+    double k2[xdim];
     (*ode_func) (tn + Ts/2,temp, k2, u, xdim); // COmpute half-step in k1 direction
 
     for (int i = 0; i < xdim; i++) temp[i] = x[i] + Ts/2 * k2[i];
 
-    float k3[xdim];
+    double k3[xdim];
     (*ode_func) (tn + Ts/2, temp, k3, u, xdim); // Half step in k2 direction
 
     for (int i = 0; i < xdim; i++) temp[i] = x[i] + Ts * k3[i];
 
-    float k4[xdim];
+    double k4[xdim];
     (*ode_func) (tn + Ts, temp, k4, u, xdim); // Full step in k3 direction
 
     for (int i =0; i < xdim; i++) x[i] += Ts/6 * (k1[i] + 2*k2[i] + 2*k3[i] + k4[i]); // Actual step
@@ -33,7 +33,7 @@ void ct_fode4_step(void (*ode_func) (float,  float*, float*, float* , uint8_t), 
 
 
 
-void ode_func(float tn, float* x, float* dx, float* u, uint8_t xdim)
+void ode_func(double tn, double* x, double* dx, double* u, uint8_t xdim)
 {
     // Motor are modeled as first order system 
     // Motor 1
@@ -50,13 +50,13 @@ void ode_func(float tn, float* x, float* dx, float* u, uint8_t xdim)
     #endif
 
     double F1, F2, F3, F4;
-    F1 = (float) (kF * x[13] * x[13] );
-    F2 = (float) (kF * x[14] * x[14] );
-    F3 = (float) (kF * x[15] * x[15] );
-    F4 = (float) (kF * x[16] * x[16] );
+    F1 =  (kF * x[13] * x[13] );
+    F2 =  (kF * x[14] * x[14] );
+    F3 =  (kF * x[15] * x[15] );
+    F4 =  (kF * x[16] * x[16] );
 
     //Torque vectors
-    float T, Tx, Ty, Tz;
+    double T, Tx, Ty, Tz;
     T = F1 + F2 + F3 + F4;
     Tx = L * (F2 - F4);
     Ty = L * (F1 - F3);
@@ -87,9 +87,9 @@ void ode_func(float tn, float* x, float* dx, float* u, uint8_t xdim)
 
 void solve_step(State_t* state, State_raw_t* state_raw, MotorCommand_t* m_cmd)
 {
-    float x_[STATE_SIZE];
-    float dx[STATE_SIZE];
-    float u[4];
+    double x_[STATE_SIZE];
+    double dx[STATE_SIZE];
+    double u[4];
 
     uint8_t xdim = sizeof(x_)/sizeof(x_[0]);
     uint8_t udim = 4; 
@@ -98,14 +98,14 @@ void solve_step(State_t* state, State_raw_t* state_raw, MotorCommand_t* m_cmd)
 
     for (int i = 0 ; i < udim; i++)
     {
-        float cmd = (float)m_cmd->motor_cmd[i];
+        double cmd = (double)m_cmd->motor_cmd[i];
         if (cmd < MOTOR_MIN_COMMAND)
         {
             u[i] = 0.0f;
         }
         else
         {
-            u[i] = ((float)(cmd - MOTOR_MIN_COMMAND) / (float)(MOTOR_MAX_COMMAND - MOTOR_MIN_COMMAND))* MOTOR_MAX_RPM;
+            u[i] = ((double)(cmd - MOTOR_MIN_COMMAND) / (double)(MOTOR_MAX_COMMAND - MOTOR_MIN_COMMAND))* MOTOR_MAX_RPM;
         }
         
     }
@@ -115,7 +115,7 @@ void solve_step(State_t* state, State_raw_t* state_raw, MotorCommand_t* m_cmd)
     ct_fode4_step(ode_func, 0.0, dx, x_, xdim, u, TIMESTEP);
 
     //Normalize quaterinon
-    float qnorm = sqrtf(x_[6]*x_[6] + x_[7]*x_[7] + x_[8]*x_[8] + x_[9]*x_[9]);
+    double qnorm = sqrt(x_[6]*x_[6] + x_[7]*x_[7] + x_[8]*x_[8] + x_[9]*x_[9]);
     if (qnorm > 1e-6f) {
         x_[6] /= qnorm;
         x_[7] /= qnorm;
