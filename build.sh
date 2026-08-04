@@ -19,6 +19,7 @@ if [ "$RUN_MAKE_FLASH" -eq 1 ]; then
 fi 
 
 if [ "$RUN_MAKE_HIL_TEST" -eq 1 ]; then
+    make -C "$HIL_TEST_DIR" clean
     echo "RUNNING HIL TEST..."
     make -C "$HIL_TEST_DIR" run
     exit 0

@@ -51,7 +51,7 @@ void timer0_init(void)
 /*
  * Set individual pwm outputs
 */
-void timer0_set_duty_cycle_A(uint8_t duty_cycle) {OCR0A = duty_cycle * 255 / 100;}
-void timer0_set_duty_cycle_B(uint8_t duty_cycle) {OCR0B = duty_cycle * 255 / 100;}
-void timer2_set_duty_cycle_A(uint8_t duty_cycle) {OCR2A = duty_cycle * 255 / 100;}
-void timer2_set_duty_cycle_B(uint8_t duty_cycle) {OCR2B = duty_cycle * 255 / 100;}
+void timer0_set_duty_cycle_A(uint8_t duty_cycle) {OCR0A = duty_cycle ;}
+void timer0_set_duty_cycle_B(uint8_t duty_cycle) {OCR0B = duty_cycle ;}
+void timer2_set_duty_cycle_A(uint8_t duty_cycle) {OCR2A = duty_cycle ;}
+void timer2_set_duty_cycle_B(uint8_t duty_cycle) {OCR2B = duty_cycle ;}

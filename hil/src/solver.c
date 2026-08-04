@@ -2,36 +2,8 @@
 
 #include "protocol.h"
 #include "solver.h"
+#include <math.h>
 
-/*
-    All functions that represent a integrator of some type have the same footprint.
-
-    ct_xxxx_step:
-
-    (*ode_func) -Pointer to the state update function f[k, x(k)]
-    tn          -Current time. Used for explictly time-dependant systems i.e. xdot(t) = f[t, x(t)].
-    x           -Pointer to the state array (vector).
-    xdim        -Dimension of the state array (vector).
-    Ts          -Sample time (Sometimes, step size).
-
-    How you should implement the (*ode_func) function :
-    void ode_func(float tn, float* x,  float* dx, uint8_t xdim)
-    {
-        dx[0]           = How should x[0] update.
-        .               .
-        .               .
-        .               .
-        dx[xdim - 1]    = How should x[xdim - 1] update.
-    }
-
-    ct_qxxx_step : Same implementation but uses Q16.16 representation of a decimal instead of floating point.
-*/
-void ct_fode1_step(void (*ode_func) (float,  float*, float*, float* , uint8_t), float tn, float* dx, float* x, uint8_t xdim, float* u, float Ts)
-{
-    (*ode_func) (tn, x, dx, u, xdim);
-
-    for (int i = 0; i < xdim; i++) x[i] += Ts * (dx[i]);
-}
 void ct_fode4_step(void (*ode_func) (float,  float*, float*, float* , uint8_t), float tn, float* dx, float* x, uint8_t xdim, float* u, float Ts)
 {
     float k1[xdim];
@@ -65,13 +37,17 @@ void ode_func(float tn, float* x, float* dx, float* u, uint8_t xdim)
 {
     // Motor are modeled as first order system 
     // Motor 1
-    dx[13] = km * (u[0] - x[13]); 
-    // Motor 2
-    dx[14] = km * (u[1] - x[14]); 
-    // Motor 3
-    dx[15] = km * (u[2] - x[15]); 
-    // Motor 4
-    dx[16] = km * (u[3] - x[16]); 
+    #ifdef MOTOR_USE_FIRST_ORDER_MODEL
+        dx[13] = km * (u[0] - x[13]); 
+        // Motor 2
+        dx[14] = km * (u[1] - x[14]); 
+        // Motor 3
+        dx[15] = km * (u[2] - x[15]); 
+        // Motor 4
+        dx[16] = km * (u[3] - x[16]); 
+    #else 
+        //TODO : Implement BLDC motor model
+    #endif
 
     double F1, F2, F3, F4;
     F1 = (float) (kF * x[13] * x[13] );
@@ -106,6 +82,7 @@ void ode_func(float tn, float* x, float* dx, float* u, uint8_t xdim)
     dx[11] =  1.0/Iy *(Ty - x[10]*x[12] * (Iz - Ix));
     dx[12] =  1.0/Iz *(Tz - x[11]*x[10] * (Iy - Ix));
 
+
 }
 
 void solve_step(State_t* state, State_raw_t* state_raw, MotorCommand_t* m_cmd)
@@ -121,17 +98,30 @@ void solve_step(State_t* state, State_raw_t* state_raw, MotorCommand_t* m_cmd)
 
     for (int i = 0 ; i < udim; i++)
     {
-        u[i] = (float)m_cmd->motor_cmd[i] * MOTOR_MAX_RPM / 100.0;
+        float cmd = (float)m_cmd->motor_cmd[i];
+        if (cmd < MOTOR_MIN_COMMAND)
+        {
+            u[i] = 0.0f;
+        }
+        else
+        {
+            u[i] = ((float)(cmd - MOTOR_MIN_COMMAND) / (float)(MOTOR_MAX_COMMAND - MOTOR_MIN_COMMAND))* MOTOR_MAX_RPM;
+        }
         
-        if(u[i] < 0) u[i] = 0.0;
-        if(u[i] > MOTOR_MAX_RPM ) u[i] = MOTOR_MAX_RPM;//8959.81 / 2.0; 
     }
 
 
     // Integrate one timestep
     ct_fode4_step(ode_func, 0.0, dx, x_, xdim, u, TIMESTEP);
 
-    
+    //Normalize quaterinon
+    float qnorm = sqrtf(x_[6]*x_[6] + x_[7]*x_[7] + x_[8]*x_[8] + x_[9]*x_[9]);
+    if (qnorm > 1e-6f) {
+        x_[6] /= qnorm;
+        x_[7] /= qnorm;
+        x_[8] /= qnorm;
+        x_[9] /= qnorm;
+    } 
     if (x_[2] <= 0.0) x_[2] = 0.0;
     if (x_[2] <= 0.0 && x_[5] <= 0.0) x_[5] = 0.0; 
 
@@ -141,17 +131,17 @@ void solve_step(State_t* state, State_raw_t* state_raw, MotorCommand_t* m_cmd)
     // if SENSOR_X_USE_BASIC_MODEL is defined uses accel and gyro data without any noise  
     // State is already a pointer to state
     #ifdef SENSOR_ACCEL_USE_BASIC_MODEL
-        state->accel[0] = dx[3]; 
-        state->accel[1] = dx[4]; 
-        state->accel[2] = dx[5]; 
+        state->accel[0] = LOOP_HZ * dx[3]; 
+        state->accel[1] = LOOP_HZ * dx[4]; 
+        state->accel[2] = LOOP_HZ * dx[5]; 
     #else 
         sensor_accel_model(state, dx);
     #endif
 
     #ifdef SENSOR_GYRO_USE_BASIC_MODEL
-        state->gyro[0] = dx[10];
-        state->gyro[1] = dx[11];
-        state->gyro[2] = dx[12];
+        state->gyro[0] = LOOP_HZ * dx[10];
+        state->gyro[1] = LOOP_HZ * dx[11];
+        state->gyro[2] = LOOP_HZ * dx[12];
     #else
         sensor_gyro_model(state, dx);
     #endif

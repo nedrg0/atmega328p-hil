@@ -8,13 +8,13 @@
 #include "uart.h"
 #include "timer.h"
 #include "protocol.h"
+#include "adc.h"
 volatile bool sample = 0;
 volatile uint32_t ticks = 0;
-volatile uint8_t cmd = 90;
+volatile uint16_t cmd = 0;
 ISR(TIMER1_COMPA_vect)
 {
     sample = true;
-    if(ticks++ == 2000) cmd = 74;
 }
 
 
@@ -27,6 +27,7 @@ int main()
     io_pwm_init();
     timer0_init();
     timer2_init();
+    adc_init();
 
     timer0_set_duty_cycle_A(100);
     timer0_set_duty_cycle_B(50);
@@ -38,19 +39,28 @@ int main()
     m_cmd.motor_cmd[1] =0; 
     m_cmd.motor_cmd[2] =0;
     m_cmd.motor_cmd[3] =0;
+    
     while(1)
     { 
         if(sample)
         {
             if(protocol_poll_state(&state))
             {
-                uint16_t cmd_norm = cmd;
+                cmd = adc_read();
+                uint16_t scaled_cmd = adc_to_dshot_throttle_inverted(cmd);
                 
-                m_cmd.motor_cmd[0] = cmd_norm;
-                m_cmd.motor_cmd[1] = cmd_norm;
-                m_cmd.motor_cmd[2] = cmd_norm;
-                m_cmd.motor_cmd[3] = cmd_norm;
+                m_cmd.motor_cmd[0] =scaled_cmd;
+                m_cmd.motor_cmd[1] =scaled_cmd;
+                m_cmd.motor_cmd[2] =scaled_cmd;
+                m_cmd.motor_cmd[3] =scaled_cmd;
+
                 protocol_send_motor_command(&m_cmd);
+
+                timer0_set_duty_cycle_A(m_cmd.motor_cmd[0]);
+                timer0_set_duty_cycle_B(m_cmd.motor_cmd[1]);
+                timer2_set_duty_cycle_A(m_cmd.motor_cmd[2]);
+                timer2_set_duty_cycle_B(m_cmd.motor_cmd[3]);
+
             }
             sample = false;
         }

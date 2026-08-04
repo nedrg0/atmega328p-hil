@@ -24,7 +24,7 @@ OBJ_DIR = obj
 #Files
 TARGET = app
 
-SOURCES = main.c gpio.c uart.c ring_buffer.c timer.c protocol.c 
+SOURCES = main.c gpio.c uart.c ring_buffer.c timer.c protocol.c adc.c
 
 OBJECTS = $(addprefix $(OBJ_DIR)/, $(SOURCES:.c=.o))
 
